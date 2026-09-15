@@ -9,9 +9,4 @@ html {
 body {
     width: 100%;
     min-height: 100dvh;
-    display: grid;
-    justify-content: center;
-    align-content: center;
-    background-color: black;
-    color: white;
 }
