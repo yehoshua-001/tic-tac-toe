@@ -75,6 +75,10 @@ const Gameboard = ( function() {
         console.table(board);
     };
 
+    const reset = () => {
+        createBoard();
+    };
+
     return {
         isCellEmpty,
         placeMark,
@@ -82,13 +86,14 @@ const Gameboard = ( function() {
         isFull,
         findWinningLine,
         printBoard,
+        reset,
     };
 })();
 
 function createPlayer(defaultName, mark) {
     let name = defaultName;
     let score = 0;
-    
+        
     const getName = () => name;
 
     const setName = (value) => {
@@ -138,10 +143,6 @@ const GameController = ( function() {
     const getWinner = () => winner;
     const getWinningLine = () => winningLine;
 
-    const switchTurn = () => {
-        activePlayer = activePlayer === players[0] ? players[1] : players[0];
-    };
-
     // This is for console mode
     const inputNum = () => {
         let input = prompt(`${activePlayer.getName()}'s turn ${activePlayer.getMark()} (row, column)`);
@@ -150,19 +151,24 @@ const GameController = ( function() {
         playRound(row, column);
     };
 
+    const setUpPlayers = ({playerOne, playerTwo} = {}) => {
+        players[0].setName(playerOne);
+        players[1].setName(playerTwo);
+
+        inputNum();
+    };
+
+    const switchTurn = () => {
+        activePlayer = activePlayer === players[0] ? players[1] : players[0];
+    };
+
     const playRound = (row, column) => {
         const mark = activePlayer.getMark();
-
         const move = Gameboard.placeMark(row, column, mark);
         if (!move) {
             console.log('Cell is occupied');
             inputNum();
-            return {
-                ok: false,
-                reason: "cell-taken",
-                row,
-                column,
-            };
+            return {ok: false, reason: "cell-taken", row, column,};
         };
 
         const line = Gameboard.findWinningLine(mark);
@@ -172,44 +178,41 @@ const GameController = ( function() {
             winner = activePlayer;
             winningLine = line;
             activePlayer.addScore();
-            console.log(`${activePlayer.getName()} WON`)
-            console.log(`${players[0].getName()} : ${players[0].getScore()}`)
-            console.log(`${players[1].getName()} : ${players[1].getScore()}`)
-            return {
-                ok: true,
-                status: "win",
-                row,
-                column,
-                mark,
-                winner,
-                line,
+            console.log(`${players[0].getName()} : ${players[0].getScore()}`);
+            console.log(`${players[1].getName()} : ${players[1].getScore()}`);
+            confirm(`${activePlayer.getName()} WON`);
+            if (confirm) {
+                newRound();
             };
+            return {ok: true, status: "win", row, column, mark, winner, line,};
         }
 
         if (Gameboard.isFull()) {
-            console.log(`IT'S A TIE`)
+            console.log(`${players[0].getName()} : ${players[0].getScore()}`);
+            console.log(`${players[1].getName()} : ${players[1].getScore()}`);
+            alert(`IT'S A TIE`);
+            newRound();
             isOver = true;
             result = "tie";
             ties += 1;
-            return {
-                ok: true,
-                status: "tie",
-                row,
-                column,
-                mark,
-            };
+            return {ok: true, status: "tie", row, column, mark,};
         };
 
         switchTurn();
         inputNum();
-        return {
-            ok: true,
-            status: "playing",
-            row,
-            column,
-            mark,
-            next: activePlayer,
-        };
+        return {ok: true, status: "playing", row, column, mark, next: activePlayer,};
+    };
+
+    const newRound = () => {
+        Gameboard.reset();
+        isOver = false;
+        result = null;
+        winner = null;
+        winningLine = null;
+        activePlayer= players[playerIndex];
+        playerIndex = playerIndex === 0 ? 1 : 0;
+        Gameboard.printBoard();
+        inputNum();
     };
     
     return {
@@ -219,11 +222,26 @@ const GameController = ( function() {
         isGameOver,
         getWinner,
         getWinningLine,
+        setUpPlayers,
         switchTurn,
         inputNum, // for console mode
+        newRound,
         playRound,
     };
 })();
 
+const DisplayController = ( function() {
+    const startMatch = () => {
+        GameController.setUpPlayers({
+            playerOne: prompt(`Player 1 name`, `Player 1`),
+            playerTwo: prompt(`Player 2 name`, `Player 2`),
+        });
+    };
+
+    return {
+        startMatch,
+    };
+})();
+
 Gameboard.printBoard();
-GameController.inputNum();
+DisplayController.startMatch();
