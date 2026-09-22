@@ -84,6 +84,7 @@ const Gameboard = ( function() {
     };
 
     return {
+        getBoard,
         getRows,
         getColumns,
         isCellEmpty,
@@ -149,31 +150,24 @@ const GameController = ( function() {
     const getWinner = () => winner;
     const getWinningLine = () => winningLine;
 
-    // This is for console mode
-    const inputNum = () => {
-        let input = prompt(`${activePlayer.getName()}'s turn ${activePlayer.getMark()} (row, column)`);
-        const row = Number(input.split(",")[0]);
-        const column = Number(input.split(",")[1]);
-        playRound(row, column);
-    };
-
-    const setUpPlayers = ({playerOne, playerTwo} = {}) => {
-        players[0].setName(playerOne);
-        players[1].setName(playerTwo);
-
-        inputNum();
-    };
+    // const setUpPlayers = ({playerOne, playerTwo} = {}) => {
+    //     players[0].setName(playerOne);
+    //     players[1].setName(playerTwo);
+    // };
 
     const switchTurn = () => {
         activePlayer = activePlayer === players[0] ? players[1] : players[0];
     };
 
     const playRound = (row, column) => {
+        if (isOver) {
+            return {ok:false, reason: "game-over"};
+        };
+
         const mark = activePlayer.getMark();
+
         const move = Gameboard.placeMark(row, column, mark);
         if (!move) {
-            console.log('Cell is occupied');
-            inputNum();
             return {ok: false, reason: "cell-taken", row, column,};
         };
 
@@ -184,20 +178,10 @@ const GameController = ( function() {
             winner = activePlayer;
             winningLine = line;
             activePlayer.addScore();
-            console.log(`${players[0].getName()} : ${players[0].getScore()}`);
-            console.log(`${players[1].getName()} : ${players[1].getScore()}`);
-            confirm(`${activePlayer.getName()} WON`);
-            if (confirm) {
-                newRound();
-            };
             return {ok: true, status: "win", row, column, mark, winner, line,};
         }
 
         if (Gameboard.isFull()) {
-            console.log(`${players[0].getName()} : ${players[0].getScore()}`);
-            console.log(`${players[1].getName()} : ${players[1].getScore()}`);
-            alert(`IT'S A TIE`);
-            newRound();
             isOver = true;
             result = "tie";
             ties += 1;
@@ -205,7 +189,6 @@ const GameController = ( function() {
         };
 
         switchTurn();
-        inputNum();
         return {ok: true, status: "playing", row, column, mark, next: activePlayer,};
     };
 
@@ -217,8 +200,6 @@ const GameController = ( function() {
         winningLine = null;
         activePlayer= players[playerIndex];
         playerIndex = playerIndex === 0 ? 1 : 0;
-        Gameboard.printBoard();
-        inputNum();
     };
     
     return {
@@ -228,9 +209,8 @@ const GameController = ( function() {
         isGameOver,
         getWinner,
         getWinningLine,
-        setUpPlayers,
+        // setUpPlayers,
         switchTurn,
-        inputNum, // for console mode
         newRound,
         playRound,
     };
@@ -239,32 +219,66 @@ const GameController = ( function() {
 const DisplayController = ( function() {
     const boardGrid = document.querySelector("#boardGrid");
 
+    const symbol = (mark) =>
+        mark === "X"
+            ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <title>close</title>
+                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+                </svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                    <title>circle-outline</title>
+                    <path d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                </svg>`;
+
     const createCells = () => {
         for (let r = 0; r < Gameboard.getRows(); r++) {
             for (let c = 0; c < Gameboard.getColumns(); c++) {
                 const cell = document.createElement('button');
                 cell.type = "button";
+                cell.className = "cell";
                 cell.dataset.row = String(r);
                 cell.dataset.column = String(c);
-                cell.className = "cell";
+                cell.dataset.mark = "";
                 boardGrid.appendChild(cell);
             };
         };
     };
 
-    const startMatch = () => {
-        GameController.setUpPlayers({
-            playerOne: prompt(`Player 1 name`, `Player 1`),
-            playerTwo: prompt(`Player 2 name`, `Player 2`),
+    const getCell = (row, column) => 
+        boardGrid.querySelector(`[data-row="${row}"][data-column="${column}"]`);
+
+    const render = () => {
+        const board = Gameboard.getBoard();
+        
+        board.forEach((row, r) => {
+            row.forEach((value, c) => {
+                const cell = getCell(r, c);
+                if (!cell) return;
+
+                const current = cell.dataset.mark || "";
+                const next = value || "";
+                if (current === next) return;
+
+                cell.dataset.mark = next;
+                cell.innerHTML = next ? symbol(next) : "";
+            });
+        });
+    };
+
+    const bindEvents = () => {
+        boardGrid.addEventListener('click', (event) => {
+            const cell = event.target.closest('.cell');
+            GameController.playRound(Number(cell.dataset.row), Number(cell.dataset.column));
+            console.log(Number(cell.dataset.row), Number(cell.dataset.column));
+            render();
         });
     };
 
     return {
         createCells,
-        startMatch,
+        bindEvents,
     };
 })();
 
 DisplayController.createCells();
-// Gameboard.printBoard();
-// DisplayController.startMatch();
+DisplayController.bindEvents();
