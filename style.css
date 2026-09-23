@@ -56,17 +56,49 @@ body {
     width: 100%;
     min-height: 100dvh;
     display: grid;
-    grid-template: min-content 1fr min-content / 1fr;
+    grid-template: min-content 2fr min-content / 1fr;
     justify-items: center;
     align-items: center;
 }
 
-main > div[id="boardGrid"] {
-    width: 30rem;
-    height: 30rem;
+main {
+    display: grid;
+    grid-template: 1fr min-content / 1fr;
+    justify-items: center;
+    align-items: center;
+}
+
+main > div[class="content"] {
+    grid-area: 1 / 1 / 2 / 2;
+    display: grid;
+    grid-template: 1fr min-content / 1fr 1fr 1fr;
+    justify-items: center;
+    align-items: center;
+}
+
+main > div[class="content"] > div[id="status"] {
+    grid-area: 1 / 2 / 2 / 3;
+}
+
+main > div[class="content"] > div[id="boardGrid"] {
+    grid-area: 2 / 2 / 3 / 3;
+    width: 25rem;
+    height: 25rem;
     display: grid;
     grid-template: repeat(3, 1fr) / repeat(3, 1fr);
-    border: 1px solid black;
+    /* border: 1px solid black; */
+}
+
+main > div[class="content"] > div[class="playerOne"] {
+    grid-area: 2 / 1 / 3 / 2;
+    display: grid;
+    justify-items: center;
+}
+
+main > div[class="content"] > div[class="playerTwo"] {
+    grid-area: 2 / 3 / 3 / 4;
+    display: grid;
+    justify-items: center;
 }
 
 div[id="boardGrid"] > .cell {
