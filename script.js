@@ -220,6 +220,7 @@ const GameController = ( function() {
 
 const DisplayController = ( function() {
     const boardGrid = document.querySelector("#boardGrid");
+
     const status = document.querySelector('#status');
     const playerOneName = document.querySelector('#playerOneName');
     const playerOneScore = document.querySelector('#playerOneScore');
@@ -228,13 +229,19 @@ const DisplayController = ( function() {
     const newGameBtn = document.querySelector('#newGame');
     const rematchBtn = document.querySelector('#rematch');
 
+    const setupDialog = document.querySelector('.setupDialog');
+    const setupForm = document.querySelector('.setupForm');
+    const setupBtn = document.querySelector('#startBtn');
+    const playerOneInput = document.querySelector('#p1-name');
+    const playerTwoInput = document.querySelector('#p2-name');
+
     const symbol = (mark) =>
         mark === "X"
-            ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            ? `<svg class="x-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <title>close</title>
                     <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
                 </svg>`
-            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            : `<svg class="o-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <title>circle-outline</title>
                     <path d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
                 </svg>`;
@@ -248,6 +255,10 @@ const DisplayController = ( function() {
                 cell.dataset.row = String(r);
                 cell.dataset.column = String(c);
                 cell.dataset.mark = "";
+                cell.innerHTML = `
+                    <span class="x-mark"></span>
+                    <span class="o-mark"></span>
+                    <span class="mark"></span>`;
                 boardGrid.appendChild(cell);
             };
         };
@@ -269,7 +280,7 @@ const DisplayController = ( function() {
                 if (current === next) return;
 
                 cell.dataset.mark = next;
-                cell.innerHTML = next ? symbol(next) : "";
+                cell.querySelector('.mark').innerHTML = next ? symbol(next) : "";
             });
         });
     };
@@ -318,6 +329,11 @@ const DisplayController = ( function() {
     };
 
     const startGame = () => {
+        GameController.setUpPlayers({
+            playerOne: playerOneInput.value,
+            playerTwo: playerTwoInput.value,
+        });
+
         GameController.newRound();
         GameController.resetScores();
         render();
@@ -338,8 +354,13 @@ const DisplayController = ( function() {
             playMatch(Number(cell.dataset.row), Number(cell.dataset.column));
         });
 
-        newGameBtn.addEventListener('click', () => {
+        setupBtn.addEventListener('click', () => {
             startGame();
+            setupDialog.close();
+        });
+
+        newGameBtn.addEventListener('click', () => {
+            setupDialog.showModal();
         });
 
         rematchBtn.addEventListener('click', () => {
@@ -347,15 +368,18 @@ const DisplayController = ( function() {
         });
     };
 
+    const initialize = () => {
+        createCells();
+        render();
+        renderScoreBoard();
+        announceTurn();
+        bindEvents();
+        setupDialog.showModal();
+    };
+
     return {
-        createCells,
-        renderScoreBoard,
-        announceTurn,
-        bindEvents,
+        initialize,
     };
 })();
 
-DisplayController.createCells();
-DisplayController.renderScoreBoard();
-DisplayController.announceTurn();
-DisplayController.bindEvents();
+DisplayController.initialize();
