@@ -128,14 +128,6 @@ main > div[class="content"] > div[id="boardGrid"] {
     gap: 15px;
 }
 
-div[id="boardGrid"] > button {
-    transition: transform 0.2s ease-in-out;
-}
-
-div[id="boardGrid"] > button:hover {
-    transform: scale(1.05);
-}
-
 main > div[class="content"] > div[class="playerOne"] {
     grid-area: 2 / 1 / 3 / 2;
     display: grid;
@@ -164,25 +156,99 @@ div[class="playerTwo"] > #playerTwoScore {
 
 div[id="boardGrid"] > .cell {
     width: 100%;
-    border: none;
-    border-radius: 10px;
-    background-color: var(--cell);
-}
-
-.cell > .mark {
+    height: 100%;
     display: grid;
     justify-items: center;
     align-items: center;
+    position: relative;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    background-color: var(--cell);
+    transition: transform 0.2s ease-in-out;
 }
 
-.x-icon {
-    fill: var(--x);
-    max-width: 100%;
+.symbol-x {
+    stroke: var(--x);
+    stroke-width: 8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-.o-icon {
-    fill: var(--o);
-    max-width: 80%;
+.symbol-o {
+    stroke: var(--o);
+    fill: none;
+    stroke-width: 8;
+}
+
+.ghost {
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: 0;
+}
+
+.ghost--x::before,
+.ghost--x::after {
+    content: '';
+    position: absolute;
+    top: 45%;
+    left: 10%;
+    width: 80%;
+    height: 8%;
+    min-height: 3px;
+    background-color: var(--x);
+    border-radius: 100px;
+}
+
+.ghost--x::before {
+    transform: rotate(45deg);
+}
+
+.ghost--x::after {
+    transform: rotate(-45deg);
+}
+
+.ghost--o::before,
+.ghost--o::after {
+    content: '';
+    position: absolute;
+    top: 17%;
+    left: 17%;
+    width: 65%;
+    height: 65%;
+    border: 10px solid var(--o);
+    border-radius: 50%;
+}
+
+.boardGrid.turn-x .cell.is-empty:hover .ghost--x,
+.boardGrid.turn-x .cell.is-empty:focus-visible .ghost--x,
+.boardGrid.turn-o .cell.is-empty:hover .ghost--o,
+.boardGrid.turn-o .cell.is-empty:focus-visible .ghost--o {
+    opacity: 0.22;
+}
+
+.mark {
+    display: contents;
+}
+
+.cell.is-empty:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+.boardGrid.is-locked .cell,
+.cell:not(.is-empty) {
+    cursor: default;
+}
+
+.boardGrid.turn-x .cell.is-empty:hover,
+.boardGrid.turn-x .cell.is-empty:focus-visible {
+    border: 2px solid var(--x);
+}
+
+.boardGrid.turn-o .cell.is-empty:hover,
+.boardGrid.turn-o .cell.is-empty:focus-visible {
+    border: 2px solid var(--o);
 }
 
 main > dialog {
@@ -267,6 +333,7 @@ div[class="buttons"] > button {
     color: var(--text);
     background-color: var(--cell);
     transition: transform 0.2s ease-in-out;
+    cursor: pointer;
 }
 
 div[class="buttons"] > button:hover {
