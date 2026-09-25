@@ -237,27 +237,26 @@ const DisplayController = ( function() {
 
     const symbol = (mark) =>
         mark === "X"
-            ? `<svg class="x-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <title>close</title>
-                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                </svg>`
-            : `<svg class="o-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                    <title>circle-outline</title>
-                    <path d="M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
-                </svg>`;
+        ? `<svg class="symbol-x" viewBox="0 0 100 100" aria-hidden="true">
+                <line class="stroke1" x1="25" y1="25" x2="75" y2="75"/>
+                <line class="stroke2" x1="75" y1="25" x2="25" y2="75"/>
+            </svg>`
+        : `<svg class="symbol-o" viewBox="0 0 100 100" aria-hidden="true">
+                <circle class="ring" cx="50" cy="50" r="28"/>
+            </svg>`;
 
     const createCells = () => {
         for (let r = 0; r < Gameboard.getRows(); r++) {
             for (let c = 0; c < Gameboard.getColumns(); c++) {
                 const cell = document.createElement('button');
                 cell.type = "button";
-                cell.className = "cell";
+                cell.className = "cell is-empty";
                 cell.dataset.row = String(r);
                 cell.dataset.column = String(c);
                 cell.dataset.mark = "";
                 cell.innerHTML = `
-                    <span class="x-mark"></span>
-                    <span class="o-mark"></span>
+                    <span class="ghost ghost--x" aria-hidden="true"></span>
+                    <span class="ghost ghost--o" arie-hidden="true"></span>
                     <span class="mark"></span>`;
                 boardGrid.appendChild(cell);
             };
@@ -281,6 +280,7 @@ const DisplayController = ( function() {
 
                 cell.dataset.mark = next;
                 cell.querySelector('.mark').innerHTML = next ? symbol(next) : "";
+                cell.classList.toggle('is-empty', next === "");
             });
         });
     };
@@ -294,6 +294,15 @@ const DisplayController = ( function() {
         playerTwoScore.textContent = String(two.getScore());
     };
 
+    const renderTurn = () => {
+        const active = GameController.getActivePlayer();
+        const over = GameController.isGameOver();
+        const mark = active.getMark();
+
+        boardGrid.classList.toggle('turn-x', !over && mark === "X");
+        boardGrid.classList.toggle('turn-o', !over && mark === "O");
+    };
+
     const setStatus = (text) => {
         status.textContent = text;
     };
@@ -303,7 +312,7 @@ const DisplayController = ( function() {
         setStatus(`${active.getName()}'s turn`);        
     };
 
-    const playMatch = (row, column) => {
+    const matchTurn = (row, column) => {
         const move = GameController.playRound(row, column);
         if (!move.ok) {
             if (move.reason === "cell-taken") {
@@ -318,6 +327,7 @@ const DisplayController = ( function() {
             if (move.status === "win") {
                 setStatus(`${move.winner.getName()} wins`);
                 renderScoreBoard();
+                renderTurn();
             }
             else if (move.status === "tie") {
                 setStatus("It's a tie");
@@ -325,6 +335,7 @@ const DisplayController = ( function() {
             return;
         };
 
+        renderTurn();
         announceTurn();
     };
 
@@ -337,6 +348,7 @@ const DisplayController = ( function() {
         GameController.newRound();
         GameController.resetScores();
         render();
+        renderTurn();
         renderScoreBoard();
         announceTurn();
     };
@@ -344,6 +356,7 @@ const DisplayController = ( function() {
     const startRound = () => {
         GameController.newRound();
         render();
+        renderTurn();
         renderScoreBoard();
         announceTurn();
     };
@@ -351,7 +364,7 @@ const DisplayController = ( function() {
     const bindEvents = () => {
         boardGrid.addEventListener('click', (event) => {
             const cell = event.target.closest('.cell');
-            playMatch(Number(cell.dataset.row), Number(cell.dataset.column));
+            matchTurn(Number(cell.dataset.row), Number(cell.dataset.column));
         });
 
         setupBtn.addEventListener('click', () => {
@@ -371,6 +384,7 @@ const DisplayController = ( function() {
     const initialize = () => {
         createCells();
         render();
+        renderTurn();
         renderScoreBoard();
         announceTurn();
         bindEvents();
