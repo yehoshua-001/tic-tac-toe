@@ -67,8 +67,7 @@ const Gameboard = ( function() {
 
     const findWinningLine = (mark) =>
         winningPatterns.find((line) => 
-            line.every(([r, c]) => board[r][c] === mark),
-        ) || null;
+            line.every(([r, c]) => board[r][c] === mark)) || null;
 
     const printBoard = () => {
         console.table(board);
@@ -132,7 +131,6 @@ const GameController = ( function() {
 
     let playerIndex = 0;
     let activePlayer = players[playerIndex];
-    let ties = 0;
     let isOver = false;
     let result = null;
     let winner = null;
@@ -140,7 +138,6 @@ const GameController = ( function() {
 
     const getPlayers = () => players;
     const getActivePlayer = () => activePlayer;
-    const getTies = () => ties;
     const isGameOver = () => isOver;
     const getWinner = () => winner;
     const getWinningLine = () => winningLine;
@@ -192,7 +189,6 @@ const GameController = ( function() {
         if (Gameboard.isFull()) {
             isOver = true;
             result = "tie";
-            ties += 1;
             return {ok:true, status: "tie"};
         };
 
@@ -206,7 +202,6 @@ const GameController = ( function() {
     return {
         getPlayers,
         getActivePlayer,
-        getTies,
         isGameOver,
         getWinner,
         getWinningLine,
@@ -307,15 +302,44 @@ const DisplayController = ( function() {
         status.textContent = text;
     };
 
+    const renderWinner = (line) => {
+        boardGrid.classList.add('has-winner');
+        line.forEach(([r, c]) => getCell(r, c).classList.add('is-winner'));
+    };
+
+    const removeWinner = () => {
+        boardGrid.classList.remove('has-winner');
+        boardGrid.querySelectorAll('.cell').forEach(cell => {
+            cell.classList.remove('is-winner');
+        });
+    };
+
     const announceTurn = () => {
         const active = GameController.getActivePlayer();
-        setStatus(`${active.getName()}'s turn`);        
+        const mark = active.getMark();
+        status.classList.remove('status-tie');
+        status.classList.remove('status-occupied');
+        status.classList.toggle('status-x', mark === "X");
+        status.classList.toggle('status-o', mark === "O");
+        
+        const name = active.getName();
+        if (name.endsWith("s")) {
+            setStatus(`${name}' turn`);
+        }
+        else if (name.endsWith("S")) {
+            setStatus(`${name}' turn`);
+        }
+        else {
+            setStatus(`${name}'s turn`);
+        }
     };
 
     const matchTurn = (row, column) => {
         const move = GameController.playRound(row, column);
         if (!move.ok) {
             if (move.reason === "cell-taken") {
+                status.classList.remove('status-tie');
+                status.classList.toggle('status-occupied');
                 setStatus('Square is occupied');
             };
             return;
@@ -326,10 +350,13 @@ const DisplayController = ( function() {
         if (move.status !== "playing") {
             if (move.status === "win") {
                 setStatus(`${move.winner.getName()} wins`);
+                renderWinner(move.line);
                 renderScoreBoard();
                 renderTurn();
             }
             else if (move.status === "tie") {
+                status.classList.remove('status-occupied');
+                status.classList.toggle('status-tie');
                 setStatus("It's a tie");
             }
             return;
@@ -358,6 +385,7 @@ const DisplayController = ( function() {
         render();
         renderTurn();
         renderScoreBoard();
+        removeWinner();
         announceTurn();
     };
 
