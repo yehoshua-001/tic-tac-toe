@@ -72,8 +72,7 @@ const Gameboard = ( function() {
 
     const findWinningLine = (mark) =>
         winningPatterns.find((line) => 
-            line.every(([r, c]) => board[r][c] === mark),
-        ) || null;
+            line.every(([r, c]) => board[r][c] === mark)) || null;
 
     const printBoard = () => {
         console.table(board);
@@ -136,7 +135,6 @@ const GameController = ( function() {
 
     let playerIndex = 0;
     let activePlayer = players[playerIndex];
-    let ties = 0;
     let isOver = false;
     let result = null;
     let winner = null;
@@ -144,7 +142,6 @@ const GameController = ( function() {
 
     const getPlayers = () => players;
     const getActivePlayer = () => activePlayer;
-    const getTies = () => ties;
     const isGameOver = () => isOver;
     const getWinner = () => winner;
     const getWinningLine = () => winningLine;
@@ -179,7 +176,6 @@ const GameController = ( function() {
 
     const resetScores = () => {
         players.forEach(player => player.resetScore());
-        ties = 0;
     };
 
     const playRound = (row, column) => {
@@ -214,7 +210,6 @@ const GameController = ( function() {
             newRound();
             isOver = true;
             result = "tie";
-            ties += 1;
             return;
         };
 
@@ -226,7 +221,6 @@ const GameController = ( function() {
     return {
         getPlayers,
         getActivePlayer,
-        getTies,
         isGameOver,
         getWinner,
         getWinningLine,
