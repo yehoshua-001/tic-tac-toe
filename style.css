@@ -119,6 +119,22 @@ main > div[class="content"] > div[id="status"] {
     font-weight: 700;
 }
 
+.status-x {
+    color: var(--x);
+}
+
+.status-o {
+    color: var(--o);
+}
+
+.status-tie {
+    color: #70E000;
+}
+
+.status-occupied {
+    color: #C1121F;
+}
+
 main > div[class="content"] > div[id="boardGrid"] {
     grid-area: 2 / 2 / 3 / 3;
     width: 25rem;
@@ -249,6 +265,15 @@ div[id="boardGrid"] > .cell {
 .boardGrid.turn-o .cell.is-empty:hover,
 .boardGrid.turn-o .cell.is-empty:focus-visible {
     border: 2px solid var(--o);
+}
+
+.boardGrid.has-winner .cell:not(.is-winner) {
+    opacity: 0.1;
+    pointer-events: none;
+}
+
+.cell.is-winner {
+    opacity: 1;
 }
 
 main > dialog {
