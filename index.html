@@ -30,13 +30,22 @@
             </div>
             <dialog class="setupDialog">
                 <form class="setupForm">
+                    <fieldset class="modes">
+                        <legend>Mode</legend>
+                        <div class="modeChoices">
+                            <input type="radio" name="mode" id="pvb" value="bot" checked>
+                            <label for="pvb">Player vs Bot</label>                            
+                            <input type="radio" name="mode" id="pvp" value="human">
+                            <label for="pvp">Player vs Player</label>
+                        </div>
+                    </fieldset>
                     <div class="playerOneField">
                         <label for="p1-name">Player 1</label>
                         <input type="text" name="p1-name" id="p1-name" maxlength="12" placeholder="Player 1">
                     </div>
                     <div class="playerTwoField">
                         <label for="p2-name">Player 2</label>
-                        <input type="text" name="p2-name" id="p2-name" maxlength="12" placeholder="Player 2">
+                        <input type="text" name="p2-name" id="p2-name" maxlength="12" placeholder="Bot" disabled>
                     </div>
                 </form>
                 <button type="submit" id="startBtn" form="setupForm">Start Game</button>
