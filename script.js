@@ -51,6 +51,13 @@ const Gameboard = ( function() {
         return true;
     };
 
+    // For minimax algorithm
+    const undoMark = (row, column) => {
+        if (!isCellValid(row, column)) return false;
+        board[row][column] = null;
+        return true;
+    };
+
     const getEmptyCells = () => {
         const emptyCells = [];
         for (let r = 0; r < rows; r++) {
@@ -83,17 +90,19 @@ const Gameboard = ( function() {
         getColumns,
         isCellEmpty,
         placeMark,
+        undoMark,
         getEmptyCells,
         isFull,
         findWinningLine,
         printBoard,
-        reset,
+        reset
     };
 })();
 
 function createPlayer(defaultName, mark) {
     let name = defaultName;
     let score = 0;
+    let bot = false;
         
     const getName = () => name;
 
@@ -113,6 +122,12 @@ function createPlayer(defaultName, mark) {
         score = 0;
     };
 
+    const isBot = () => bot;
+    
+    const setBot = (value) => {
+        bot = Boolean(value);
+    }; 
+
     return {
         getName,
         setName,
@@ -120,6 +135,8 @@ function createPlayer(defaultName, mark) {
         getScore,
         addScore,
         resetScore,
+        isBot,
+        setBot
     };
 }
 
@@ -142,9 +159,14 @@ const GameController = ( function() {
     const getWinner = () => winner;
     const getWinningLine = () => winningLine;
 
-    const setUpPlayers = ({playerOne, playerTwo} = {}) => {
+    const setupPlayers = ({playerOne, playerTwo, vsBot = false} = {}) => {
         players[0].setName(playerOne);
-        players[1].setName(playerTwo);
+        players[0].setBot(false);
+        players[1].setName(
+            vsBot ? playerTwo || "Bot" : playerTwo
+        );
+        players[1].setBot(vsBot);
+        playerIndex = 0;
     };
 
     const switchTurn = () => {
@@ -199,17 +221,79 @@ const GameController = ( function() {
         };
     };
     
+    // Minimax algorithm for unbeatable bot
+    const minimax = (depth, isMaximizing, botMark, playerMark) => {
+        const botLine = Gameboard.findWinningLine(botMark);
+        if (botLine) return 10 - depth;
+
+        const playerLine = Gameboard.findWinningLine(playerMark);
+        if (playerLine) return depth - 10;
+
+        if (Gameboard.isFull()) return 0;
+
+        const emptyCells = Gameboard.getEmptyCells();
+
+        if (isMaximizing) {
+            let best = -Infinity;
+            for (const [r, c] of emptyCells) {
+                Gameboard.placeMark(r, c, botMark);
+                const score = minimax(depth + 1, false, botMark, playerMark);
+                Gameboard.undoMark(r, c);
+                best = Math.max(best, score);
+            };
+            return best;
+        };
+
+        let best = Infinity;
+        for (const [r, c] of emptyCells) {
+            Gameboard.placeMark(r, c, playerMark);
+            const score = minimax(depth + 1, true, botMark, playerMark);
+            Gameboard.undoMark(r, c);
+            best = Math.min(best, score);
+        };
+        return best;
+    };
+
+    const findBestMove = (botMark, playerMark) => {
+        let bestScore = -Infinity;
+        let bestMove = null;
+
+        Gameboard.getEmptyCells().forEach(([r, c]) => {
+            Gameboard.placeMark(r, c, botMark);
+            const score = minimax(0, false, botMark, playerMark);
+            Gameboard.undoMark(r, c);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = [r, c];
+            };
+        });
+        return bestMove;
+    };
+
+    const botTurn = () => {
+        const botMark = activePlayer.getMark();
+        const playerMark = botMark === "X" ? "O" : "X";
+
+        const move = findBestMove(botMark, playerMark);
+        if (!move) return {ok: false, reason: "no-moves"};
+
+        const [row, column] = move;
+        return playRound(row, column);
+    };
+
     return {
         getPlayers,
         getActivePlayer,
         isGameOver,
         getWinner,
         getWinningLine,
-        setUpPlayers,
+        setupPlayers,
         switchTurn,
         newRound,
         resetScores,
         playRound,
+        botTurn
     };
 })();
 
@@ -217,18 +301,24 @@ const DisplayController = ( function() {
     const boardGrid = document.querySelector("#boardGrid");
 
     const status = document.querySelector('#status');
+
+    const playerOneInput = document.querySelector('#p1-name');
     const playerOneName = document.querySelector('#playerOneName');
     const playerOneScore = document.querySelector('#playerOneScore');
+
+    const playerTwoInput = document.querySelector('#p2-name');
     const playerTwoName = document.querySelector('#playerTwoName');
     const playerTwoScore = document.querySelector('#playerTwoScore');
+
+    const playerVsPlayer = document.querySelector('#pvp');
+    const playerVsBot = document.querySelector('#pvb');
+
     const newGameBtn = document.querySelector('#newGame');
     const rematchBtn = document.querySelector('#rematch');
 
     const setupDialog = document.querySelector('.setupDialog');
     const setupForm = document.querySelector('.setupForm');
     const setupBtn = document.querySelector('#startBtn');
-    const playerOneInput = document.querySelector('#p1-name');
-    const playerTwoInput = document.querySelector('#p2-name');
 
     const symbol = (mark) =>
         mark === "X"
@@ -307,7 +397,7 @@ const DisplayController = ( function() {
         line.forEach(([r, c]) => getCell(r, c).classList.add('is-winner'));
     };
 
-    const removeWinner = () => {
+    const clearRender = () => {
         boardGrid.classList.remove('has-winner');
         boardGrid.querySelectorAll('.cell').forEach(cell => {
             cell.classList.remove('is-winner');
@@ -324,14 +414,70 @@ const DisplayController = ( function() {
         
         const name = active.getName();
         if (name.endsWith("s")) {
-            setStatus(`${name}' turn`);
+            setStatus(
+                active.isBot() ? `${name} is thinking...` : `${name}' turn`
+            );
         }
         else if (name.endsWith("S")) {
-            setStatus(`${name}' turn`);
+            setStatus(
+                active.isBot() ? `${name} is thinking...` : `${name}' turn`
+            );
         }
         else {
-            setStatus(`${name}'s turn`);
+            setStatus(
+                active.isBot() ? `${name} is thinking...` : `${name}'s turn`
+            );
         }
+    };
+
+    const evalMatch = (move) => {
+        if (move.status === "win") {
+            setStatus(`${move.winner.getName()} wins`);
+            renderWinner(move.line);
+            renderScoreBoard();
+            renderTurn();
+        }
+        else if (move.status === "tie") {
+            status.classList.remove('status-occupied');
+            status.classList.toggle('status-tie');
+            setStatus("It's a tie");
+        }
+        
+        renderScoreBoard();
+        renderTurn();
+    };
+
+    let botTimer = null;
+    const botMove = () => {
+        const active = GameController.getActivePlayer();
+        if (GameController.isGameOver() || !active.isBot()) return;
+
+        boardGrid.classList.toggle('disable-board');
+        announceTurn();
+
+        botTimer = window.setTimeout(
+            () => {
+                const move = GameController.botTurn();
+                if (!move || !move.ok) return;
+
+                render();
+
+                if (move.status === "playing") {
+                    renderTurn();
+                    announceTurn();
+                    boardGrid.classList.remove('disable-board');
+                }
+                else {
+                    evalMatch(move);
+                }
+            },
+            1250
+        );
+    };
+
+    const cancelBotMove = () => {
+        window.clearTimeout(botTimer);
+        botTimer = null;
     };
 
     const matchTurn = (row, column) => {
@@ -348,28 +494,23 @@ const DisplayController = ( function() {
         render();
 
         if (move.status !== "playing") {
-            if (move.status === "win") {
-                setStatus(`${move.winner.getName()} wins`);
-                renderWinner(move.line);
-                renderScoreBoard();
-                renderTurn();
-            }
-            else if (move.status === "tie") {
-                status.classList.remove('status-occupied');
-                status.classList.toggle('status-tie');
-                setStatus("It's a tie");
-            }
+            evalMatch(move);
             return;
         };
 
         renderTurn();
         announceTurn();
+        botMove();
     };
 
     const startGame = () => {
-        GameController.setUpPlayers({
+        clearRender();
+        cancelBotMove();
+        GameController.setupPlayers({
             playerOne: playerOneInput.value,
-            playerTwo: playerTwoInput.value,
+            playerTwo: playerVsBot.checked 
+                ? playerTwoInput.value || "Bot" : playerTwoInput.value,
+            vsBot: playerVsBot.checked
         });
 
         GameController.newRound();
@@ -378,15 +519,19 @@ const DisplayController = ( function() {
         renderTurn();
         renderScoreBoard();
         announceTurn();
+        botMove();
     };
 
     const startRound = () => {
+        boardGrid.classList.remove('disable-board');
+        clearRender();
+        cancelBotMove();
         GameController.newRound();
         render();
         renderTurn();
         renderScoreBoard();
-        removeWinner();
         announceTurn();
+        botMove();
     };
 
     const bindEvents = () => {
@@ -395,10 +540,32 @@ const DisplayController = ( function() {
             matchTurn(Number(cell.dataset.row), Number(cell.dataset.column));
         });
 
+        setupDialog.addEventListener('cancel', () => {
+            boardGrid.classList.toggle('disable-board');
+            status.classList.toggle('choose-mode');
+            setStatus('Board is locked! I wonder why...');
+            rematchBtn.setAttribute('style', 'pointer-events: none;');
+            newGameBtn.setAttribute('style', 'background-color: #38B000;');
+        });
+
         setupBtn.addEventListener('click', () => {
+            boardGrid.classList.remove('disable-board');
+            status.classList.remove('choose-mode');
+            rematchBtn.removeAttribute('style');
+            newGameBtn.removeAttribute('style');
+
             startGame();
             setupDialog.close();
         });
+
+        const syncModeFields = () => {
+            const vsBot = playerVsBot.checked;
+            playerTwoInput.disabled = vsBot;
+            playerTwoInput.placeholder = vsBot ? "Bot" : "Player 2";
+            if (vsBot) playerTwoInput.value = "";
+        };
+        playerVsBot.addEventListener('change', syncModeFields);
+        playerVsPlayer.addEventListener('change', syncModeFields);
 
         newGameBtn.addEventListener('click', () => {
             setupDialog.showModal();
@@ -414,7 +581,6 @@ const DisplayController = ( function() {
         render();
         renderTurn();
         renderScoreBoard();
-        announceTurn();
         bindEvents();
         setupDialog.showModal();
     };
