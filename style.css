@@ -71,7 +71,7 @@ h1, h2, h3, h4, h5, h6 {
     --bg: #020202;
     --cell: #1F2A2D;
     --x: #0080AA;
-    --o: #FFD027;
+    --o: #C1121F;
 }
 
 html {
@@ -127,12 +127,9 @@ main > div[class="content"] > div[id="status"] {
     color: var(--o);
 }
 
-.status-tie {
-    color: #70E000;
-}
-
+.status-tie,
 .status-occupied {
-    color: #C1121F;
+    color: var(--text);
 }
 
 main > div[class="content"] > div[id="boardGrid"] {
@@ -182,6 +179,14 @@ div[id="boardGrid"] > .cell {
     border-radius: 10px;
     background-color: var(--cell);
     transition: transform 0.2s ease-in-out;
+}
+
+.disable-board {
+    pointer-events: none;
+}
+
+.choose-mode {
+    color: var(--text);
 }
 
 .symbol-x {
@@ -280,8 +285,8 @@ main > dialog {
     &[open] {
         display: grid;
         grid-template: 1fr / 1fr;
-        width: 20rem;
-        height: 20rem;
+        gap: 20px;
+        width: 25rem;
         padding: 30px;
         border: none;
         border-radius: 10px;
@@ -296,7 +301,7 @@ main > dialog {
 
 dialog > form {
     display: grid;
-    grid-template: repeat(2, min-content) / 1fr;
+    grid-template: repeat(3, min-content) / 1fr;
     gap: 10px;
 }
 
@@ -304,24 +309,78 @@ form input {
     width: 100%;
     padding-block: 5px;
     padding-inline: 7px;
-    border: 2px solid #1F2A2D;
+    border: 2px solid var(--cell);
     border-radius: 10px;
     color: var(--text);
     background-color: var(--bg);
     outline: none;
 }
 
-form input[id="p1-name"]:focus {
+form fieldset[class="modes"] {
+    padding: 0;
+    color: var(--text);
+    border: none;
+}
+
+fieldset[class="modes"] > legend {
+    font-size: 0.8rem;
+}
+
+div[class="modeChoices"] {
+    display: grid;
+    grid-template: 1fr / 1fr 1fr;
+    gap: 0.3rem;
+    padding: 0.3rem;
+    border: 2px solid var(--cell);
+    border-radius: 10px;
+}
+
+div[class="modeChoices"] input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+div[class="modeChoices"] label {
+    text-align: center;
+    color: #747474;
+    padding: 0.5rem 0.4rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition:
+        color 0.2s,
+        background-color 0.2s;
+}
+
+.modeChoices input:checked + label {
+    color: var(--text);
+    background-color: var(--x);
+}
+
+.modeChoices input[id="pvp"]:checked + label {
+    color: var(--text);
+    background-color: var(--o);
+}
+
+input[id="p1-name"] {
     color: var(--x);
     border: 2px solid var(--x);
 }
 
-form input[id="p2-name"]:focus {
+input[id="p2-name"] {
     color: var(--o);
     border: 2px solid var(--o);
 }
 
-form label {
+input[id="pvb"]:checked,
+input[id="p2-name"]:disabled {
+    border: 2px solid var(--cell);
+}
+
+div[class="playerOneField"] > label,
+div[class="playerTwoField"] > label {
     font-size: 0.8rem;
     color: var(--text);
 }
