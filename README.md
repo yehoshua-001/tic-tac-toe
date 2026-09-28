@@ -5,6 +5,9 @@ This project is a web-based Tic Tac Toe game that functions inside multiple fact
 
 <strong>Note:</strong> The whole game is intended to work in console before the user-interface mode to test and see if the factory functions, closures, and encapsulations are working.
 
+## Demo
+https://github.com/user-attachments/assets/1775fe03-e5ab-44fa-b5d7-05eaa76a510b 
+
 ## Setup
 Method 1
 - github-page: https://yehoshua-001.github.io/tic-tac-toe/ 
